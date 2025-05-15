@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>꿈보다 해몽</title>
+<style>
+	@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap');
+
+	html {
+	  font-family: "Noto Sans KR", sans-serif;
+	  font-size: 62.5%;
+	  word-break: keep-all;
+	  letter-spacing: -0.02em;
+	  overflow-x: hidden;
+	}
+	body, h1, h2, h3, p, ol, ul {
+	  margin: 0;
+	  padding: 0;
+	}
+	.header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      flex-wrap: wrap; 
+    }
+    .header-bar h1 {
+      font-size: 2rem;
+      margin: 0;
+    }
+    .search-bar {
+      width: 100%;
+      max-width: 320px;
+      flex-grow: 1;
+      flex-shrink: 0;
+    }
+    .search-bar input {
+      padding: 10px 16px;
+      font-size: 1.4rem;
+      border: 2px solid #aaa;
+      border-radius: 30px;
+      width: 280px;
+    }
+    .category-bar, .subcategory-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 24px 16px;
+    }
+    .category-bar button, .subcategory-bar button {
+      font-size: 1.8rem;
+      padding: 13px 30px 11px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .category-bar button {
+      background: #ddd;
+    }
+    .category-bar button.active {
+      background: #6b8df2;
+      color: #fff;
+    }
+    .subcategory-bar button {
+      border: 2px solid #6b8df2;
+      background: transparent;
+      color: #6b8df2;
+    }
+    .subcategory-bar button.active {
+      background: #6b8df2;
+      color: #fff;
+    }
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding:54px 24px 40px;
+    }
+    .card {
+      width: 180px; height: 250px;
+      background: white;
+      border-radius: 16px;
+      padding: 20px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-6px);
+    }
+    .card .thumb {
+      width: 112px;
+      height: 112px;
+      margin: auto;
+      border-radius: 50%;
+      background: #ccc;
+    }
+    .card p {
+      font-weight: 500;
+      font-size: 1.8rem;
+      margin-top: 62px;
+    }
+    .modal-bg {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.3);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal {
+  background: white;
+  padding: 48px 36px;
+  border-radius: 20px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.modal h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.modal .thumb {
+  width: 80px;
+  height: 80px;
+  background: #ccc;
+  border-radius: 50%;
+  margin: 20px auto 20px auto;
+}
+
+.modal p {
+  font-size: 1.5rem;
+  line-height: 1.6;
+  word-break: keep-word;
+}
+    .close-btn {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <h1>꿈보다 해몽</h1>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="검색어를 입력하세요...">
+    </div>
+  </div>
+  <div class="category-bar" id="categoryBar"></div>
+  <div class="subcategory-bar" id="subcategoryBar"></div>
+  <div class="card-grid" id="cardGrid"></div>
+
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <div class="close-btn" onclick="closeModal()">×</div>
+      <h2 id="modal-title"></h2>
+      <div class="thumb"></div>
+      <p id="modal-desc"></p>
+    </div>
+  </div>
+
+  <script>
+    const data = {
+      '자연': {
+        '강/호수': ['맑은 강물이나 호수에 손이나 발을 담근 꿈','강물 위를 걷는 꿈','강에서 헤엄치는 꿈'],
+        '바다': ['바다에 빠지는 꿈', '잔잔한 맑은 바다를 바라보는 꿈'],
+        '산': ['높은 산에 오르는 꿈','산에서 굴러 떨어지는 꿈'],
+        '해': ['해를 보고 절을 하는 꿈','머리 위에 해를 얹고 있는 꿈'],
+        '달': ['보름달을 보는 꿈','반달을 보는 꿈'],
+        '지진/홍수': ['지진이 일어나는 꿈'],
+        '불': ['집에 불이 나는 꿈','학교에 불나는 꿈'],
+        '벼락/천둥': ['천둥소리를 듣는 꿈','벼락 맞은 나무가 시커멓게 타는 꿈',],
+
+      },
+      '신체': {
+        '머리': ['머리카락이 빠지는 꿈'],
+        '얼굴': ['얼굴 다치는 꿈','주름이 생기는 꿈'],
+        '발': ['발이 부러지는 꿈','발에 상처가 나는 꿈'],
+        '등': ['등에 날개가 생기는 꿈'],
+        '피': ['눈이 머는 꿈'],
+      },
+      '동물': {
+        '개': ['개를 키우는 꿈'],
+        '고양이': ['고양이를 안는 꿈'],
+        '토끼': ['토끼가 뛰는 꿈'],
+        '족제비': ['흰 족제비 보는 꿈'],
+        '사자': ['사자에게 쫓기는 꿈'],
+        '호랑이': ['호랑이를 만나는 꿈'],
+      },
+      '상황': {
+        '먹는 것': ['과일을 먹는 꿈', '계란을 먹는 꿈', '매운 음식을 먹는 꿈', '술을 마시는 꿈', '물을 마시는 꿈'],
+        '죽음': ['사람을 때려서 죽이는 꿈', '가족이 사람을 죽이는 꿈', '모르는 사람이 살인하는 꿈'],
+        '질병': ['병원에 입원하는 꿈','전염병에 걸리는 꿈','열이 나는 꿈','암에 걸리는 꿈','반려동물이 아픈 꿈'],
+      },
+      '상징/사물': {
+        '돈': ['돈 받는 꿈', '동전 받는 꿈','조상에게 돈을 받는 꿈','가게에서 돈을 내고 물건을 사는 꿈','남의 돈을 뺏는 꿈'],
+        '거울': ['거울이 깨지는 꿈','거울에 비친 얼굴이 일그러진 꿈','거울에 용이 비치는 꿈','거울에 비친 모습이 다른 사람으로 보이는 꿈'],
+        '가구': ['가구를 사는 꿈','가구를 고치는 꿈','침대가 딱딱하여 불편한 꿈','다른 사람 책상에 앉는 꿈','자신의 의자에 다른 사람이 앉아있는 꿈'],
+      },
+      '인물': {
+        '가족': ['온 가족이 한 자리에 모이는 꿈', '부모님께 걱정을 끼치는 꿈','부모님이 병으로 앓아누워 계시는 꿈','부모님을 해치는 꿈'],
+        '친구': ['친구와 노는 꿈','옛 친구가 나오는 꿈','친구가 화를 내는 꿈','친구들에게 구타당하는 꿈'],
+        '연예인': ['연예인이 집안으로 들어오는 꿈','연예인과 결혼하는 꿈','자신이 유명한 연예인이 되는 꿈','유명한 연예인을 만나는 꿈'],
+        '정치인': ['내가 정치인이 되는 꿈','정치인과 인사하는 꿈','정치인에게 상을 받는 꿈','정치인이 죽는 꿈'],
+      },
+      '기타/초현실': {
+        '전쟁': ['군대가 정렬하여 전쟁터로 향하는 꿈', '전쟁터에서 자신이 전사하는 꿈','전쟁이 나서 피난을 가는 꿈'],
+        '별자리': ['별자리가 보이는 꿈','북두칠성을 본 꿈']
+      },
+    };
+
+    const cardTexts = {
+      '개를 키우는 꿈': '개를 키우는 꿈은 책임감과 돌봄을 상징합니다.',
+      '고양이를 안는 꿈': '고양이를 안는 꿈은 위로와 정서적 안정감을 의미합니다.',
+      '토끼가 뛰는 꿈': '토끼는 생명력과 번창의 상징입니다.',
+      '우는 꿈': '감정을 해소하고 싶은 무의식의 표현입니다.',
+      '폭풍 우는 꿈': '억눌린 감정이 터져 나오는 것을 뜻합니다.',
+      '웃는 꿈': '긍정적 변화나 자신감의 신호일 수 있어요.',
+      '사자에게 쫓기는 꿈': '강한 권력이나 두려움에서 도망치고 싶다는 의미합니다.',
+      '호랑이를 만나는 꿈': '도전과 위협, 또는 새로운 기회와의 만남을 의미합니다.',
+      '바다에 빠지는 꿈': '위험, 압도당하는 감정을 의미하고, 현재 삶에서 스트레스를 받고 있다는걸 의미합니다.',
+      '잔잔한 맑은 바다를 바라보는 꿈': '자신의 마음이 바다와 같이 안정되고, 편안함을 얻게 되는 것을 암시합니다.',
+      '맑은 강물이나 호수에 손이나 발을 담근 꿈': '자신이 하는 일에 만족감을 느끼게 되며 사회적으로나 가정적으로 모두 화기애애하며 원하던 일이 이루어질 것을 암시합니다.',
+      '강물 위를 걷는 꿈': '큰 행운이 찾아온다는 것을 의미하는 길몽입니다.',
+      '강에서 헤엄치는 꿈': '강이 깨끗하고 맑다면 길몽이지만, 반대로 더럽다면 흉몽입니다.',
+      '높은 산에 오르는 꿈': '어떤 것을 이루기 위해 노력하는 과정을 나타낸 꿈입니다. 목표 달성에 대한 노력과 의지를 나타낼 수 있습니다.',
+      '산에서 굴러 떨어지는 꿈': '잘 풀려가던 일에 갑작스러운 문제가 생길 수 있습니다. 다음에 더 좋은 기회가 올 때까지 버텨보세요!',
+      '흰 족제비 보는 꿈': '다른 사람들의 질투나 시기로 인해 심적으로 힘든 시간을 보내게 될 수 있습니다.',
+      '해를 보고 절을 하는 꿈': '자신이 원하는 일이 이루어진다는 암시입니다.',
+      '머리 위에 해를 얹고 있는 꿈': '입학, 취업, 승진 등 원하던 일이 이루어진다는 의미입니다.',
+      '보름달을 보는 꿈': '당신의 삶에서 긍정적인 변화와 풍요로운 기회가 찾아올 것이라는걸 암시합니다. 또한 당신이 현재 안정적인 삶을 살고 있다는걸 의미합니다.',
+      '반달을 보는 꿈': '자신이 하고 있는 일이 아직은 준비 단계지만 점차 발전하여 성공하게 될 것을 암시합니다.',
+      '지진이 일어나는 꿈': '큰 변화의 전조를 의미합니다. 부정적인 변화, 긍정적인 변화 모두 가능성이 있습니다.',
+      '집에 불이 나는 꿈': '금전운이 상승해 삶이 풍요로워진다는 것을 암시하는 길몽입니다. 불길이 거셀수록 영향력이 크게 작용합니다. 만약 불을 끄게되면 어려운 상황이 찾아올 수도 있습니다.',
+      '학교에 불나는 꿈': '인간관에 많은 갈등이 생겨날 징조입니다. 원만히 잘 해결한다면 자신이 바라던 바를 이룰 수 있게 됩니다.',
+      '천둥소리를 듣는 꿈': '모든 일들이 자신이 원하는 대로 잘 진행되며 소원을 성취하게 됩니다.',
+      '벼락 맞은 나무가 시커멓게 타는 꿈': '어려움과 고난을 당하는 것을 암시합니다.',
+      '머리카락이 빠지는 꿈': '자신의 능력이나 지위가 하락할 것을 의미합니다. 지금 하고 있는 일이 잘 안풀리거나, 어려움을 겪게 될 수도 있습니다.',
+      '얼굴 다치는 꿈': '군중이 많이 모인 가운데 인신공격을 당하고 모멸감을 느끼게 됩니다.',
+      '주름이 생기는 꿈': '인생의 변화와 성장을 의미합니다. 주변 사람들에게 인정받을 일이 생긴다.',
+      '발이 부러지는 꿈': '여행이나 이동 중에 어려움을 겪을 가능성을 의미합니다.',
+      '발에 상처가 나는 꿈': '일이나 사업에서 장애물을 만나거나 방해을 받을 수 있음을 암시합니다.',
+      '등에 날개가 생기는 꿈': '신분이 상승하거나 명성과 재물이 생길 징조입니다.',
+    
+    };
+
+    const categoryBar = document.getElementById('categoryBar');
+    const subcategoryBar = document.getElementById('subcategoryBar');
+    const cardGrid = document.getElementById('cardGrid');
+
+    function renderCategories() {
+      categoryBar.innerHTML = '';
+      Object.keys(data).forEach((cat, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = cat;
+        btn.onclick = () => {
+          document.querySelectorAll('.category-bar button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderSubcategories(cat);
+          renderCards(cat);
+        }
+        if (idx === 0) btn.classList.add('active');
+        categoryBar.appendChild(btn);
+      });
+    }
+
+    function renderSubcategories(cat) {
+      subcategoryBar.innerHTML = '';
+      Object.keys(data[cat]).forEach((sub, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = sub;
+        btn.onclick = () => {
+          document.querySelectorAll('.subcategory-bar button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderCards(cat, sub);
+        }
+        if (idx === 0) btn.classList.add('active');
+        subcategoryBar.appendChild(btn);
+      });
+    }
+
+    function renderCards(cat, sub) {
+      cardGrid.innerHTML = '';
+      let keys = sub ? data[cat][sub] : Object.values(data[cat]).flat();
+      keys.forEach(text => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<div class="thumb"></div><p>${text}</p>`;
+        card.onclick = () => openModal(text, cardTexts[text] || '해몽 준비중입니다.');
+        cardGrid.appendChild(card);
+      });
+    }
+
+    // 기존 renderCards 함수 아래에 그대로 추가
+function searchCards(keyword) {
+  cardGrid.innerHTML = '';
+  const results = [];
+
+  Object.keys(data).forEach(cat => {
+    Object.keys(data[cat]).forEach(sub => {
+      data[cat][sub].forEach(text => {
+        if (text.includes(keyword)) {
+          results.push(text);
+        }
+      });
+    });
+  });
+
+  if (results.length > 0) {
+    results.forEach(text => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<div class="thumb"></div><p>${text}</p>`;
+      card.onclick = () => openModal(text, cardTexts[text] || '해몽 준비중입니다.');
+      cardGrid.appendChild(card);
+    });
+  } else {
+    cardGrid.innerHTML = `<p style="font-size:2rem; color:#888;">검색 결과가 없습니다.</p>`;
+  }
+}
+
+
+    function openModal(title, desc) {
+      document.getElementById("modal-title").innerText = title;
+      document.getElementById("modal-desc").innerText = desc;
+      document.getElementById("modal").style.display = "flex";
+    }
+    function closeModal() {
+      document.getElementById("modal").style.display = "none";
+    }
+
+    renderCategories();
+    renderSubcategories('자연');
+    renderCards('자연');
+
+   // 검색창 실시간 반응
+document.getElementById('searchInput').addEventListener('input', function () {
+  const keyword = this.value.trim();
+  if (keyword === '') {
+    const activeCat = document.querySelector('.category-bar button.active')?.textContent;
+    const activeSub = document.querySelector('.subcategory-bar button.active')?.textContent;
+    if (activeCat && activeSub) {
+      renderCards(activeCat, activeSub);
+    } else if (activeCat) {
+      renderCards(activeCat);
+    }
+  } else {
+    searchCards(keyword);
+  }
+});
+
+
+  </script>
+</body>
+</html>
